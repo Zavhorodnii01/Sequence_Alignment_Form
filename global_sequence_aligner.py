@@ -48,7 +48,7 @@ class GlobalSequenceAligner:
         Constructs the scoring matrix for a single optimal path using dynamic programming.
 
         Returns:
-            numpy.ndarray: The filled scoring matrix with backtracking pointers.
+            numpy.ndarray: The filled scoring matrix with backtracking pointers (int, (int, int)).
         """
         matrix = np.empty((len(self.first_seq) + 1, len(self.second_seq) + 1), dtype=object)
         first_num = 0
@@ -201,6 +201,7 @@ class GlobalSequenceAligner:
         optimal_paths = []
         get_all_paths([], i, j)
 
+        optimal_paths = [path[::-1] for path in optimal_paths]
         # Create aligned sequences for each path
         aligned_sequences = []
         for optimal_path in optimal_paths:
