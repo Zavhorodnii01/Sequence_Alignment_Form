@@ -180,16 +180,16 @@ def extract_sequence_from_fasta_file(loaded_fasta):
     return extracted_sequence
 
 # First load button
-download_button = tk.Button(top_frame, text="load first fasta file",
+download_button1 = tk.Button(top_frame, text="load first fasta file",
                             command=load_first_fasta_file)
-download_button.grid(row=2, column=0, pady=10)
+download_button1.grid(row=2, column=0, pady=10)
 first_fasta_label = tk.Label(top_frame, text="No file loaded", fg="gray")
 first_fasta_label.grid(row=2, column=1, padx=1, sticky="w")
 
 # Second load button
-download_button = tk.Button(top_frame, text="load second fasta file",
+download_button2 = tk.Button(top_frame, text="load second fasta file",
                             command=load_second_fasta_file)
-download_button.grid(row=2, column=2, pady=10)
+download_button2.grid(row=2, column=2, pady=10)
 second_fasta_label = tk.Label(top_frame, text="No file loaded", fg="gray")
 second_fasta_label.grid(row=2, column=3, padx=1, sticky="w")
 
@@ -251,97 +251,105 @@ def compute_optimal_alignment(aop: bool):
     have All Optimal Paths (AOP).
     :return: None
     """
+
     # Clears all previous results as well as warning messages
     message_label.config(text="")
     clear_result(False)
 
     # Checks the input correctness
-    if valid_user_input(sequence1_entry.get().upper().strip(),
-                        sequence2_entry.get().upper().strip()) == False:
-        message_label.config(
-            text="Sequences contain invalid nucleotides, try again")
-
-    # Extra method to validate user's inputs
-    def is_valid_number(s):
-        return (len(s) > 0 and s.lstrip('-').isdigit() and
-                (s.count('-') <= 1 and (s.startswith('-') or '-' not in s)))
-    if (is_valid_number(match_score_entry.get()) == False
-            or is_valid_number(mismatch_score_entry.get()) == False
-            or is_valid_number(gap_penalty_entry.get()) == False):
-        message_label.config(text="Fill match, mismatch and gap penalty scores")
-
-    # if everything is correct - start computing optimal alignment
+    global loaded_first_fasta
+    global loaded_second_fasta
+    if not valid_user_input(sequence1_entry.get().upper().strip(), sequence2_entry.get().upper().strip(),
+            extract_sequence_from_fasta_file(loaded_first_fasta), extract_sequence_from_fasta_file(loaded_second_fasta)):
+        message_label.config(text="Sequences contain invalid nucleotides, try again")
     else:
-        global optimal_paths
-        global widget_references
-        global NUM_FRAMES
-        global matrix
-        global loaded_first_fasta
-        global loaded_second_fasta
+        # Extra method to validate user's inputs
+        def is_valid_number(s):
+            return (len(s) > 0 and s.lstrip('-').isdigit() and
+                    (s.count('-') <= 1 and (s.startswith('-') or '-' not in s)))
+        if (is_valid_number(match_score_entry.get()) == False
+                or is_valid_number(mismatch_score_entry.get()) == False
+                or is_valid_number(gap_penalty_entry.get()) == False):
+            message_label.config(text="Fill match, mismatch and gap penalty scores")
 
-        # Ensures user enters only one sequence for one entry
-        sequence1_loaded = extract_sequence_from_fasta_file(loaded_first_fasta)
-        sequence2_loaded = extract_sequence_from_fasta_file(loaded_second_fasta)
-        if ((bool(sequence1_entry.get().strip()) and bool(sequence1_loaded))
-                or (not sequence1_entry.get().strip() and not sequence1_loaded)
-                or (bool(sequence2_entry.get().strip()) and bool(sequence2_loaded))
-                or (not sequence2_entry.get().strip() and not sequence2_loaded)):
-            message_label.config(
-                text="You loaded two sequences or none for one entry, try again")
-
+        # if everything is correct - start computing optimal alignment
         else:
-            sequence1 = sequence1_entry.get().upper().strip()\
-                if sequence1_entry.get() else sequence1_loaded
-            sequence2 = sequence2_entry.get().upper().strip()\
-                if sequence2_entry.get() else sequence2_loaded
-            match_score = int(match_score_entry.get())
-            mismatch_score = int(mismatch_score_entry.get())
-            gap_penalty = int(gap_penalty_entry.get())
+            # Disables the user from changing the inputs until the 'Clear Result' button is pressed,
+            # ensuring that the initial data cannot be changed if the user saves the results as a TXT file.
+            sequence1_entry.config(state="disabled")
+            sequence2_entry.config(state="disabled")
+            match_score_entry.config(state="disabled")
+            mismatch_score_entry.config(state="disabled")
+            gap_penalty_entry.config(state="disabled")
+            download_button1.config(state="disabled")
+            download_button2.config(state="disabled")
 
-            # Uses GlobalSequenceAligner Class to get all needed results
-            aligner = GlobalSequenceAligner(sequence1, sequence2, match_score,
-                                            mismatch_score, gap_penalty)
-            # Checks whether the results should contain All Optimal Paths(AOP)
-            if aop :
-                matrix = aligner.get_matrix_with_aop()
-                optimal_paths, aligned_sequences = (
-                    aligner.get_paths_and_aligned_sequences_with_aop())
-                NUM_FRAMES = len(aligned_sequences) # equals to number of aligned sequences
+
+            global optimal_paths
+            global widget_references
+            global NUM_FRAMES
+            global matrix
+
+
+            # Ensures user enters only one sequence for one entry
+            sequence1_loaded = extract_sequence_from_fasta_file(loaded_first_fasta)
+            sequence2_loaded = extract_sequence_from_fasta_file(loaded_second_fasta)
+            if ((bool(sequence1_entry.get().strip()) and bool(sequence1_loaded))
+                    or (not sequence1_entry.get().strip() and not sequence1_loaded)
+                    or (bool(sequence2_entry.get().strip()) and bool(sequence2_loaded))
+                    or (not sequence2_entry.get().strip() and not sequence2_loaded)):
+                message_label.config(
+                    text="You loaded two sequences or none for one entry, try again")
+
             else:
-                # For one optimal path
-                NUM_FRAMES = 1
-                matrix = aligner.get_matrix()
-                optimal_paths, aligned_sequences = (
-                    aligner.get_optimal_path_and_aligned_sequences())
-            score = aligner.get_score()
+                sequence1 = sequence1_entry.get().upper().strip()\
+                    if sequence1_entry.get() else sequence1_loaded
+                sequence2 = sequence2_entry.get().upper().strip()\
+                    if sequence2_entry.get() else sequence2_loaded
+                match_score = int(match_score_entry.get())
+                mismatch_score = int(mismatch_score_entry.get())
+                gap_penalty = int(gap_penalty_entry.get())
 
-            # Calls method to draw matrix with all alignments
-            draw_matrix(optimal_paths, matrix, sequence1, sequence2, aop)
-            # Creates result frames
-            widget_references = create_result_frames(NUM_FRAMES)
-            for idx, widgets in widget_references.items():
-                widgets['first_alignment_label'].config(
-                    text=" ".join(aligned_sequences[idx][0]))
-                widgets['second_alignment_label'].config(
-                    text=" ".join(aligned_sequences[idx][1]))
-                widgets['score_label'].config(text="".join(score))
-                widgets['alignment_length_label'].config(
-                    text="".join(str(len(aligned_sequences[idx][0]))))
-                widgets['identity_percentage_label'].config(
-                    text=f"{calculate_identety(aligned_sequences[idx][0], aligned_sequences[idx][1])}"
-                         f" to {len(aligned_sequences[idx][0])} / "
-                         f"{round(calculate_identety(aligned_sequences[idx][0], aligned_sequences[idx][1])
-                                  / len(aligned_sequences[idx][0]) * 100, 2)}%")
-                widgets['gaps_label'].config(
-                    text=f"{calculate_gaps(aligned_sequences[idx][0], aligned_sequences[idx][1])}"
-                         f" to {len(aligned_sequences[idx][0])} / "
-                         f"{round(calculate_gaps(aligned_sequences[idx][0], aligned_sequences[idx][1])
-                                  / len(aligned_sequences[idx][0]) * 100, 2)}%")
+                # Uses GlobalSequenceAligner Class to get all needed results
+                aligner = GlobalSequenceAligner(sequence1, sequence2, match_score,
+                                                mismatch_score, gap_penalty)
+                # Checks whether the results should contain All Optimal Paths(AOP)
+                if aop :
+                    matrix = aligner.get_matrix_with_aop()
+                    optimal_paths, aligned_sequences = (
+                        aligner.get_paths_and_aligned_sequences_with_aop())
+                    NUM_FRAMES = len(aligned_sequences) # equals to number of aligned sequences
+                else:
+                    # For one optimal path
+                    NUM_FRAMES = 1
+                    matrix = aligner.get_matrix()
+                    optimal_paths, aligned_sequences = (
+                        aligner.get_optimal_path_and_aligned_sequences())
+                score = aligner.get_score()
 
-        loaded_first_fasta = ""
-        loaded_second_fasta = ""
-        first_fasta_label.config(text="No file loaded", fg="gray")
-        second_fasta_label.config(text="No file loaded", fg="gray")
+                # Calls method to draw matrix with all alignments
+                draw_matrix(optimal_paths, matrix, sequence1, sequence2, aop)
+                # Creates result frames
+                widget_references = create_result_frames(NUM_FRAMES)
+                for idx, widgets in widget_references.items():
+                    widgets['first_alignment_label'].config(
+                        text=" ".join(aligned_sequences[idx][0]))
+                    widgets['second_alignment_label'].config(
+                        text=" ".join(aligned_sequences[idx][1]))
+                    widgets['score_label'].config(text="".join(score))
+                    widgets['alignment_length_label'].config(
+                        text="".join(str(len(aligned_sequences[idx][0]))))
+                    widgets['identity_percentage_label'].config(
+                        text=f"{calculate_identety(aligned_sequences[idx][0], aligned_sequences[idx][1])}"
+                             f" to {len(aligned_sequences[idx][0])} / "
+                             f"{round(calculate_identety(aligned_sequences[idx][0], aligned_sequences[idx][1])
+                                      / len(aligned_sequences[idx][0]) * 100, 2)}%")
+                    widgets['gaps_label'].config(
+                        text=f"{calculate_gaps(aligned_sequences[idx][0], aligned_sequences[idx][1])}"
+                             f" to {len(aligned_sequences[idx][0])} / "
+                             f"{round(calculate_gaps(aligned_sequences[idx][0], aligned_sequences[idx][1])
+                                      / len(aligned_sequences[idx][0]) * 100, 2)}%")
+
 
 def create_result_frames(num_frames=NUM_FRAMES):
     """
@@ -436,6 +444,15 @@ def clear_result(with_scores : bool):
      scoring-related entry fields to default values.
     :return: None
     """
+    # Enables user to change inputs after clearing a result
+    sequence1_entry.config(state="normal")
+    sequence2_entry.config(state="normal")
+    match_score_entry.config(state="normal")
+    mismatch_score_entry.config(state="normal")
+    gap_penalty_entry.config(state="normal")
+    download_button1.config(state="normal")
+    download_button2.config(state="normal")
+
     for idx, widgets in widget_references.items():
         result_frame = widgets['result_frame']
         result_frame.destroy()  # Destroy the result frame
@@ -450,6 +467,12 @@ def clear_result(with_scores : bool):
         mismatch_score_entry.insert(0, "-1")  # Inserts new value
         gap_penalty_entry.delete(0, tk.END)  # Deletes old value
         gap_penalty_entry.insert(0, "-2")  # Inserts new value
+
+    # Removes loaded files
+    loaded_first_fasta = ""
+    loaded_second_fasta = ""
+    first_fasta_label.config(text="No file loaded", fg="gray")
+    second_fasta_label.config(text="No file loaded", fg="gray")
 
 
 # Arrow images in .png format for visualization (diagonal, top, left)
@@ -556,7 +579,7 @@ def draw_matrix(optimal_paths: list, matrix, first_seq, second_seq,
     canvas.create_text(50 + 25, 50 + 25, text="0",font=("Arial", 16, "bold"), fill="black")
 
 
-def valid_user_input(seq1, seq2):
+def valid_user_input(seq1, seq2, seq1_loaded, seq2_loaded):
     """
     Validates user input by checking whether it is a valid sequence.
 
@@ -566,8 +589,7 @@ def valid_user_input(seq1, seq2):
     :return: Returns True if both sequences contain only valid amino acid characters
      (ACDEFGHIKLMNPQRSTVWY, case-insensitive), otherwise returns False.
     """
-    return True if re.fullmatch(
-        r'[ACDEFGHIKLMNPQRSTVWYacdefghiklmnpqrstvwy]+', seq1 + seq2) else False
+    return True if re.fullmatch(r'[ACDEFGHIKLMNPQRSTVWYacdefghiklmnpqrstvwy]+', seq1 + seq2 + seq1_loaded + seq2_loaded) else False
 
 def save_result_to_text_file(idx):
     """
@@ -579,10 +601,21 @@ def save_result_to_text_file(idx):
      Used to retrieve the relevant optimal path and widget references.
     :return: None
     """
+
+
     global optimal_paths
     optimal_path = optimal_paths[idx]
     global widget_references
     widget = widget_references.get(idx)
+
+    sequence1_loaded = extract_sequence_from_fasta_file(loaded_first_fasta)
+    sequence2_loaded = extract_sequence_from_fasta_file(loaded_second_fasta)
+
+    sequence1 = sequence1_entry.get().upper().strip() \
+        if sequence1_entry.get() else sequence1_loaded
+    sequence2 = sequence2_entry.get().upper().strip() \
+        if sequence2_entry.get() else sequence2_loaded
+    print(sequence1)
 
     # Ensures all required data has been entered by the user
     if len(widget['first_alignment_label'].cget("text")) == 0:
@@ -590,26 +623,21 @@ def save_result_to_text_file(idx):
     else:
         # Creates visual matrix
         matrix_txt = np.empty(
-            (len(sequence1_entry.get().strip()) + 2, len(sequence2_entry.get().strip()) + 2),
+            (len(sequence1) + 2, len(sequence2) + 2),
             dtype=object)
 
-        for i in range(len(sequence1_entry.get().strip()) + 2):
+        for i in range(len(sequence1) + 2):
             if i > 1:
-                matrix_txt[i][0] = sequence1_entry.get().upper().strip()[i - 2]
+                matrix_txt[i][0] = sequence1[i - 2]
 
-        for j in range (len(sequence2_entry.get().strip()) + 2):
+        for j in range(len(sequence2) + 2):
             if j > 1:
-                matrix_txt[0][j] = sequence2_entry.get().upper().strip()[j - 2]
+                matrix_txt[0][j] = sequence2[j - 2]
 
         # Fills headers
         matrix_txt[0][0] = "."
         matrix_txt[1][0] = "."
         matrix_txt[0][1] = "."
-
-        """for i, ch in enumerate(sequence1_entry.get().upper().strip()):
-            matrix_txt[i + 2][0] = ch
-        for j, ch in enumerate(sequence2_entry.get().upper().strip()):
-            matrix_txt[0][j + 2] = ch"""
 
         arrow_map = {
             (-1, -1): "↖",  # diagonal
@@ -617,17 +645,17 @@ def save_result_to_text_file(idx):
             (0, -1): "←",  # from left
         }
         # Fills matrix_txt with score + arrow
-        for i in range(1, len(sequence1_entry.get().strip()) + 2):
-            for j in range(1, len(sequence2_entry.get().strip()) + 2):
+        for i in range(1, len(sequence1) + 2):
+            for j in range(1, len(sequence2) + 2):
                 arrow = ""
-                if optimal_path.__contains__((i-1, j-1)):
-                    index = optimal_path.index((i-1,j-1))
+                if optimal_path.__contains__((i - 1, j - 1)):
+                    index = optimal_path.index((i - 1, j - 1))
                     (next_i, next_j) = optimal_path[index - 1]
-                # Calculates direction vector
+                    # Calculates direction vector
                     di = next_i - (i - 1)
                     dj = next_j - (j - 1)
                     arrow = arrow_map.get((di, dj), " ")  # fallback if not matched
-                matrix_txt[i][j] = f"{matrix[i-1][j-1][0]}{arrow}"
+                matrix_txt[i][j] = f"{matrix[i - 1][j - 1][0]}{arrow}"
 
         # Formats the matrix using pandas
         matrix_txt = np.where(matrix_txt == None, ".", matrix_txt)
@@ -641,9 +669,9 @@ def save_result_to_text_file(idx):
         if file_path:
             with open(file_path, "w", encoding="utf-8") as file:
                 file.write("Sequence 1:\n")
-                file.write(f"{sequence1_entry.get().upper().strip()}\n")
+                file.write(f"{sequence1}\n")
                 file.write("Sequence 2:\n")
-                file.write(f"{sequence2_entry.get().upper().strip()}\n")
+                file.write(f"{sequence2}\n")
                 file.write(f"Match Score:   {match_score_entry.get()}\n")
                 file.write(f"Mismatch Score:   {mismatch_score_entry.get()}\n")
                 file.write(f"Gap Penalty:   {gap_penalty_entry.get()}\n")
@@ -682,6 +710,5 @@ def calculate_identety(aligned_seq1, aligned_seq2):
         if (aligned_seq1[i] == aligned_seq2[i]) and aligned_seq1 != "-":
             identical_positions += 1
     return identical_positions
-
 
 root.mainloop()

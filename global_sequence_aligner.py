@@ -12,7 +12,7 @@ class GlobalSequenceAligner:
         mismatch_score (int): The penalty given for a character mismatch.
         gap_penalty (int): The penalty given for introducing a gap.
         __matrix (numpy.ndarray): The scoring matrix for a single optimal path.
-        __matrix_with_aop (numpy.ndarray): The scoring matrix storing all possible optimal paths.
+        __matrix_with_aop (numpy.ndarray): The scoring matrix storing OAP (All Optimal Paths).
     """
 
     def __init__(self, first_seq, second_seq, match_score, mismatch_score, gap_penalty):
